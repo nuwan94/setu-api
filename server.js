@@ -1,13 +1,16 @@
 const express = require("express");
 const axios = require("axios");
 const redis = require("redis");
+
 const cors = require("cors");
+var bodyParser = require("body-parser");
 
 const dotenv = require("dotenv");
 dotenv.config();
 
 const app = express();
 app.use(cors());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // setup redis client
 const client = redis.createClient(
@@ -48,6 +51,32 @@ app.get("/students", (req, res) => {
                 });
         }
     });
+});
+
+var multer = require("multer")();
+const FormData = require("form-data");
+
+// file uplaod endpoint
+app.post("/reports/upload", multer.single("report"), (req, res) => {
+    try {
+        axios
+            .post(process.env.FUNCTION_URL, {
+                filedata: req.file.buffer,
+                filename: req.file.originalname,
+            })
+            .then((Res) => {
+                if (Res.status === 200) {
+                    return res.status(200).send();
+                } else {
+                    throw error;
+                }
+            })
+            .catch((e) => {
+                return res.status(400).send();
+            });
+    } catch (e) {
+        console.error(e);
+    }
 });
 
 // start express server
